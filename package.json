@@ -4,7 +4,6 @@
   "description": "### Author: Paul Depew #### Acknowledgements:",
   "main": "index.js",
   "scripts": {
-    "start": "node vendor.js",
     "test": "jest --coverage --verbose"
   },
   "repository": {

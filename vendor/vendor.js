@@ -9,11 +9,15 @@
  * User faker to generate random user data
  * monitor the system for "delivered" events and console log "thank you"
  */
-require('dotenv').config();
+const net = require('net');
 const faker = require('faker');
-const events = require('./event');
 
 const storename = process.env.STORENAME;
+
+const Client = new net.Socket();
+Client.connect(3000, 'localhost', ()=> {
+  console.log('Vendor to Server');
+});
 
 
 async function randomOrder(){
@@ -27,14 +31,27 @@ async function randomOrder(){
     customerName: customerName,
     address: address,
   };
-  events.emit('cache-update', payload);
-  events.emit('pickup', payload);
-  return payload;
-}
 
-function sendOrders(store){
-  setInterval(randomOrder, 5000, store);
+  Client.write(JSON.stringify({event: 'cache-update', payload: payload}));
+  Client.write(JSON.stringify({event: 'package-ready-for-delivery', payload: payload}));
 }
 
 
+
+Client.on('data', (buffer) => {
+  let message = JSON.parse(buffer.toString());
+  if (message.event === 'delivered'){
+    delivered(message.payload);
+  }
+});
+
+function delivered(payload){
+  console.log(`Thank you for delivering ${payload.orderId}`);
+}
+
+function sendOrders(){
+  setInterval(randomOrder, 5000);
+}
+      
+      
 sendOrders();
