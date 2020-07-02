@@ -9,41 +9,38 @@
  * User faker to generate random user data
  * monitor the system for "delivered" events and console log "thank you"
  */
-const net = require('net');
+// const net = require('net');
 const faker = require('faker');
+const io = require('socket.io-client');
+const socket = io.connect('http://localhost:3000/caps');
 
 const storename = process.env.STORENAME;
 
-const Client = new net.Socket();
-Client.connect(3000, 'localhost', ()=> {
-  console.log('Vendor to Server');
-});
+// const Client = new net.Socket();
+// Client.connect(3000, 'localhost', ()=> {
+//   console.log('Vendor to Server');
+// });
 
+socket.on('hello', sendOrders);
 
 async function randomOrder(){
   let orderIdNumber = await faker.random.number();
   let customerName = await faker.name.findName();
   let address = await faker.address.streetAddress();
 
-  let  payload = await {
-    storename: storename,
+  let  payload = {
+    storename: 'JollyRogers',
     orderId: orderIdNumber,
     customerName: customerName,
     address: address,
   };
-
-  Client.write(JSON.stringify({event: 'cache-update', payload: payload}));
-  Client.write(JSON.stringify({event: 'package-ready-for-delivery', payload: payload}));
+  socket.emit('package-ready-for-delivery', payload);
+  socket.emit('data-cache', payload);
 }
 
 
 
-Client.on('data', (buffer) => {
-  let message = JSON.parse(buffer.toString());
-  if (message.event === 'delivered'){
-    delivered(message.payload);
-  }
-});
+socket.on('delivered', delivered);
 
 function delivered(payload){
   console.log(`Thank you for delivering ${payload.orderId}`);
@@ -54,4 +51,4 @@ function sendOrders(){
 }
       
       
-sendOrders();
+// sendOrders();

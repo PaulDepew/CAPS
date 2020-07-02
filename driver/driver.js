@@ -7,32 +7,39 @@
  *
  */
 
-const events = require('../caps/caps');
+// const events = require('../caps/caps');
 
-const net = require('net');
-const Client = new net.Socket();
-Client.connect(3000, 'localhost', ()=> {
-  console.log('Driver to Server');
-});
+// const net = require('net');
+// const Client = new net.Socket();
+// Client.connect(3000, 'localhost', ()=> {
+//   console.log('Driver to Server');
+// });
 
-Client.on('data', (buffer) => {
-  let message = JSON.parse(buffer.toString());
-  if (message.event === 'package-ready-for-delivery'){
-    handleGoGetPackage(message.payload);
-  }
-});
+// Client.on('data', (buffer) => {
+//   let message = JSON.parse(buffer.toString());
+//   if (message.event === 'package-ready-for-delivery'){
+//     handleGoGetPackage(message.payload);
+//   }
+// });
+
+const io = require('socket.io-client');
+
+const socket = io.connect('http://localhost:3000/caps');
+
+socket.on('package-ready-for-delivery', handleGoGetPackage);
 
 
 function handleGoGetPackage(payload) {
 
   setTimeout(function () {
-    Client.write({event: "cache-update", payload: payload});
+    socket.emit('cache-update', payload);
     console.log(`pickup: ${payload.orderId}`);
-    Client.write({event: "inTransit", payload: payload});
+    // socket.emit('in-transit', payload);
     setTimeout(function () {
-      Client.write({event: "cache-update",payload: payload});
+      socket.emit('cache-update', payload);
+      
       console.log(`delivered: ${payload.orderId}`);
-      Client.write({event: "delivered", payload: payload});
+      socket.emit('delivered', payload);
     }, 3000);
   }, 1000);
 }
